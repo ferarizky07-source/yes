@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Tarik Tambang - Descriptive Text</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', sans-serif; }
+  body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    color: #fff;
+  }
+  .container {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 25px;
+    max-width: 950px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 8px;
+    font-size: 1.8em;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  }
+  .subtitle {
+    text-align: center;
+    margin-bottom: 15px;
+    opacity: 0.9;
+    font-size: 0.9em;
+  }
+  .score-board {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-bottom: 15px;
+    background: rgba(0,0,0,0.3);
+    padding: 12px;
+    border-radius: 15px;
+  }
+  .score-item { text-align: center; flex: 1; }
+  .score-item .label { font-size: 0.85em; opacity: 0.9; }
+  .score-item .value { font-size: 1.8em; font-weight: bold; }
+  .score-item.left .value { color: #4ade80; }
+  .score-item.right .value { color: #f87171; }
+  .score-item.center .value { color: #fbbf24; font-size: 1.2em; }
+
+  .turn-indicator {
+    text-align: center;
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    font-weight: bold;
+    font-size: 1.1em;
+    transition: all 0.4s;
+  }
+  .turn-indicator.left-turn {
+    background: linear-gradient(135deg, #10b981, #059669);
+    box-shadow: 0 0 20px rgba(16,185,129,0.5);
+  }
+  .turn-indicator.right-turn {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    box-shadow: 0 0 20px rgba(239,68,68,0.5);
+  }
+
+  /* Arena */
+  .arena {
+    position: relative;
+    height: 170px;
+    background: linear-gradient(to bottom, #87ceeb 0%, #98d98e 70%, #6b8e23 100%);
+    border-radius: 15px;
+    overflow: hidden;
+    margin-bottom: 15px;
+    border: 3px solid rgba(255,255,255,0.3);
+  }
+  .ground {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 25px;
+    background: #5d4037;
+  }
+  .center-line {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 4px;
+    height: 100%;
+    background: rgba(255,255,255,0.5);
+    transform: translateX(-50%);
+    z-index: 1;
+  }
+  .center-line::before {
+    content: '🏁';
+    position: absolute;
+    top: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.3em;
+  }
+  .rope {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: repeating-linear-gradient(
+      90deg,
+      #8b4513 0px, #8b4513 10px,
+      #a0522d 10px, #a0522d 20px
+    );
+    transform: translateY(-50%);
+    z-index: 2;
+  }
+  .knot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 28px;
+    height: 28px;
+    background: radial-gradient(circle, #ff6b6b, #c92a2a);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: left 0.8s ease;
+    z-index: 3;
+    box-shadow: 0 0 15px rgba(255,0,0,0.6);
+  }
+  .team {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 2.8em;
+    transition: all 0.8s ease;
+    z-index: 4;
+    text-align: center;
+  }
+  .team .name {
+    font-size: 0.28em;
+    font-weight: bold;
+    background: rgba(0,0,0,0.7);
+    padding: 3px 10px;
+    border-radius: 10px;
+    margin-top: 5px;
+    display: inline-block;
+  }
+  .team.left { left: 5%; }
+  .team.right { right: 5%; }
+  .team.active {
+    animation: bounce 0.6s infinite alternate;
+    filter: drop-shadow(0 0 10px gold);
+  }
+  @keyframes bounce {
+    from { transform: translateY(-50%) scale(1); }
+    to { transform: translateY(-55%) scale(1.1); }
+  }
+  .team.pulling-left { animation: pullLeft 0.3s infinite alternate; }
+  .team.pulling-right { animation: pullRight 0.3s infinite alternate; }
+  @keyframes pullLeft {
+    from { transform: translateY(-50%) translateX(0); }
+    to { transform: translateY(-50%) translateX(-8px); }
+  }
+  @keyframes pullRight {
+    from { transform: translateY(-50%) translateX(0); }
+    to { transform: translateY(-50%) translateX(8px); }
+  }
+
+  /* Question Area */
+  .question-box {
+    background: rgba(0,0,0,0.4);
+    padding: 18px;
+    border-radius: 15px;
+    margin-bottom: 10px;
+  }
+  .q-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .q-number {
+    color: #fbbf24;
+    font-weight: bold;
+    font-size: 0.9em;
+  }
+  .q-topic {
+    background: rgba(251,191,36,0.2);
+    border: 1px solid #fbbf24;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8em;
+    color: #fbbf24;
+  }
+  .question {
+    font-size: 1.1em;
+    margin-bottom: 15px;
+    line-height: 1.5;
+  }
+  .options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .option {
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.3);
+    color: #fff;
+    padding: 12px 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: left;
+    font-size: 0.92em;
+  }
+  .option:hover:not(:disabled) {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-2px);
+  }
+  .option.correct {
+    background: #16a34a !important;
+    border-color: #4ade80 !important;
+    animation: correctPulse 0.5s;
+  }
+  .option.wrong {
+    background: #dc2626 !important;
+    border-color: #f87171 !important;
+    animation: shake 0.5s;
+  }
+  @keyframes correctPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+  .feedback {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: bold;
+    display: none;
+  }
+  .feedback.show { display: block; animation: fadeIn 0.4s; }
+  .feedback.correct { background: rgba(22,163,74,0.5); }
+  .feedback.wrong { background: rgba(220,38,38,0.5); }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Result Screen */
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 30px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 15px;
+  }
+  .result-screen.show { display: block; animation: fadeIn 0.6s; }
+  .result-icon { font-size: 5em; margin-bottom: 15px; }
+  .result-title { font-size: 2em; margin-bottom: 10px; }
+  .result-msg { font-size: 1.05em; margin-bottom: 20px; line-height: 1.6; }
+  .btn {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #000;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 1em;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: transform 0.2s;
+  }
+  .btn:hover { transform: scale(1.05); }
+
+  @media (max-width: 600px) {
+    .options { grid-template-columns: 1fr; }
+    h1 { font-size: 1.3em; }
+    .team { font-size: 2em; }
+    .score-item .value { font-size: 1.4em; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎯 Tarik Tambang Descriptive Text</h1>
+  <p class="subtitle">Bahasa Inggris — SMK Kelas 10</p>
+
+  <div class="score-board">
+    <div class="score-item left">
+      <div class="label">👨‍🎓 TIM KIRI</div>
+      <div class="value" id="scoreLeft">0</div>
+    </div>
+    <div class="score-item center">
+      <div class="label">📋 RONDE</div>
+      <div class="value" id="roundInfo">1 / 5</div>
+    </div>
+    <div class="score-item right">
+      <div class="label">🤖 TIM KANAN</div>
+      <div class="value" id="scoreRight">0</div>
+    </div>
+  </div>
+
+  <div class="turn-indicator left-turn" id="turnIndicator">
+    🎤 Giliran: TIM KIRI
+  </div>
+
+  <div class="arena">
+    <div class="center-line"></div>
+    <div class="rope"></div>
+    <div class="knot" id="knot"></div>
+    <div class="team left" id="teamLeft">
+      👨‍🎓
+      <div class="name">TIM KIRI</div>
+    </div>
+    <div class="team right" id="teamRight">
+      🤖
+      <div class="name">TIM KANAN</div>
+    </div>
+    <div class="ground"></div>
+  </div>
+
+  <div id="gameArea">
+    <div class="question-box">
+      <div class="q-header">
+        <div class="q-number" id="qNumber">Soal 1 dari 10</div>
+        <div class="q-topic" id="qTopic">Topik</div>
+      </div>
+      <div class="question" id="questionText">Memuat pertanyaan...</div>
+      <div class="options" id="options"></div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+  </div>
+
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon" id="resultIcon">🏆</div>
+    <div class="result-title" id="resultTitle">Hasil Pertandingan</div>
+    <div class="result-msg" id="resultMsg"></div>
+    <button class="btn" onclick="restartGame()">🔄 Main Lagi</button>
+  </div>
+</div>
+
+<script>
+  // 5 topik Descriptive Text, masing-masing punya 2 versi soal (kiri & kanan)
+  const questions = [
+    {
+      topic: "My Beloved Cat - Snowy",
+      left: {
+        q: "What is the communicative purpose of a descriptive text about 'My Beloved Cat - Snowy'?",
+        options: [
+          "To tell a story about the cat's adventure",
+          "To describe the cat's physical features and characteristics specifically",
+          "To explain how to take care of a cat",
+          "To persuade readers to buy a cat"
+        ],
+        answer: 1,
+        explain: "Tujuan komunikatif descriptive text adalah mendeskripsikan objek/person tertentu secara spesifik (to describe a particular object/person)."
+      },
+      right: {
+        q: "Which sentence uses Simple Present Tense correctly, as commonly found in descriptive text?",
+        options: [
+          "Snowy was playing with the ball yesterday",
+          "Snowy has played with the ball",
+          "Snowy plays with the ball every afternoon",
+          "Snowy will play with the ball tomorrow"
+        ],
+        answer: 2,
+        explain: "Descriptive text menggunakan Simple Present Tense (S + V1) karena menyatakan fakta/kebiasaan objek yang dideskripsikan."
+      }
+    },
+    {
+      topic: "Borobudur Temple",
+      left: {
+        q: "In a descriptive text about Borobudur Temple, the first paragraph that introduces 'what' and 'where' the temple is called...",
+        options: [
+          "Description",
+          "Identification",
+          "Orientation",
+          "Complication"
+        ],
+        answer: 1,
+        explain: "Struktur descriptive text: (1) Identification = memperkenalkan objek, (2) Description = menjelaskan ciri-ciri detail."
+      },
+      right: {
+        q: "Which word is an ADJECTIVE commonly used in descriptive text about Borobudur?",
+        options: [
+          "Build",
+          "Magnificent",
+          "Quickly",
+          "Tourism"
+        ],
+        answer: 1,
+        explain: "'Magnificent' adalah adjective (kata sifat) yang mendeskripsikan kualitas. Descriptive text banyak menggunakan adjective."
+      }
+    },
+    {
+      topic: "Komodo Dragon",
+      left: {
+        q: "Based on a descriptive text about Komodo Dragon, which one is a PHYSICAL characteristic?",
+        options: [
+          "Komodo dragon lives in Indonesia",
+          "Komodo dragon can run up to 20 km/h",
+          "Komodo dragon has rough, grey skin and a long tail",
+          "Komodo dragon eats deer and pigs"
+        ],
+        answer: 2,
+        explain: "Ciri fisik (physical characteristic) menjelaskan bentuk tubuh, warna, ukuran, dll. 'Rough, grey skin and long tail' adalah ciri fisik."
+      },
+      right: {
+        q: "The word 'HUGE' in the sentence 'Komodo dragon is a HUGE lizard' is closest in meaning to...",
+        options: [
+          "Tiny",
+          "Very large",
+          "Beautiful",
+          "Dangerous"
+        ],
+        answer: 1,
+        explain: "'Huge' = sangat besar (very large). Sinonim: enormous, gigantic, massive."
+      }
+    },
+    {
+      topic: "My School - SMA Harapan",
+      left: {
+        q: "What is the generic structure of a descriptive text about 'My School'?",
+        options: [
+          "Orientation - Complication - Resolution",
+          "Goal - Materials - Steps",
+          "Identification - Description",
+          "Thesis - Arguments - Conclusion"
+        ],
+        answer: 2,
+        explain: "Generic structure descriptive text: Identification (pengenalan objek) → Description (penjabaran ciri-ciri)."
+      },
+      right: {
+        q: "Which sentence contains an ADJECTIVE describing the school building?",
+        options: [
+          "My school has a library",
+          "The students study in the classroom",
+          "The school building is modern and clean",
+          "I go to school every day"
+        ],
+        answer: 2,
+        explain: "'Modern' dan 'clean' adalah adjective yang mendeskripsikan kondisi gedung sekolah."
+      }
+    },
+    {
+      topic: "Rafflesia Arnoldii",
+      left: {
+        q: "Why does a descriptive text about Rafflesia Arnoldii NOT use chronological order?",
+        options: [
+          "Because it tells a story with a plot",
+          "Because it describes features of a specific object, not a sequence of events",
+          "Because it explains a process step by step",
+          "Because it argues about an opinion"
+        ],
+        answer: 1,
+        explain: "Descriptive text tidak menggunakan urutan waktu karena fokusnya mendeskripsikan ciri objek tertentu, bukan menceritakan kejadian berurutan."
+      },
+      right: {
+        q: "Which language feature is MOST dominant in descriptive text about Rafflesia Arnoldii?",
+        options: [
+          "Past tense and time connectives",
+          "Simple present tense and specific noun + adjectives",
+          "Imperative sentences and technical terms",
+          "General noun and passive voice only"
+        ],
+        answer: 1,
+        explain: "Descriptive text dominan menggunakan Simple Present Tense, specific noun (Rafflesia Arnoldii), dan banyak adjective."
+      }
+    }
+  ];
+
+  let currentRound = 0;   // 0..4
+  let currentTurn = 'left'; // 'left' atau 'right'
+  let scoreLeft = 0;
+  let scoreRight = 0;
+  let position = 0; // negatif = ke kiri, positif = ke kanan
+  let totalQuestionsAnswered = 0;
+
+  const knot = document.getElementById('knot');
+  const teamLeft = document.getElementById('teamLeft');
+  const teamRight = document.getElementById('teamRight');
+  const turnIndicator = document.getElementById('turnIndicator');
+
+  function loadQuestion() {
+    const topic = questions[currentRound];
+    const qData = topic[currentTurn];
+
+    // Update header
+    const qGlobalNum = currentRound * 2 + (currentTurn === 'left' ? 1 : 2);
+    document.getElementById('qNumber').textContent = `Soal ${qGlobalNum} dari 10`;
+    document.getElementById('qTopic').textContent = `📚 ${topic.topic}`;
+    document.getElementById('roundInfo').textContent = `${currentRound + 1} / 5`;
+
+    // Update turn indicator
+    if (currentTurn === 'left') {
+      turnIndicator.className = 'turn-indicator left-turn';
+      turnIndicator.innerHTML = '🎤 Giliran: TIM KIRI 👨‍🎓';
+      teamLeft.classList.add('active');
+      teamRight.classList.remove('active');
+    } else {
+      turnIndicator.className = 'turn-indicator right-turn';
+      turnIndicator.innerHTML = '🎤 Giliran: TIM KANAN 🤖';
+      teamRight.classList.add('active');
+      teamLeft.classList.remove('active');
+    }
+
+    // Load question
+    document.getElementById('questionText').textContent = qData.q;
+    document.getElementById('feedback').className = 'feedback';
+    document.getElementById('feedback').textContent = '';
+
+    const optionsDiv = document.getElementById('options');
+    optionsDiv.innerHTML = '';
+    qData.options.forEach((opt, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'option';
+      btn.textContent = String.fromCharCode(65+idx) + '. ' + opt;
+      btn.onclick = () => answerQuestion(idx, btn);
+      optionsDiv.appendChild(btn);
+    });
+  }
+
+  function answerQuestion(idx, btn) {
+    const qData = questions[currentRound][currentTurn];
+    const allOptions = document.querySelectorAll('.option');
+    allOptions.forEach(o => o.disabled = true);
+
+    const feedback = document.getElementById('feedback');
+    const isCorrect = idx === qData.answer;
+
+    if (isCorrect) {
+      btn.classList.add('correct');
+      if (currentTurn === 'left') {
+        scoreLeft++;
+        position--; // tali ke kiri
+        feedback.className = 'feedback correct show';
+        feedback.innerHTML = `✅ <b>BENAR!</b> Tali tertarik ke arah TIM KIRI!<br><small>${qData.explain}</small>`;
+        document.getElementById('scoreLeft').textContent = scoreLeft;
+        teamLeft.classList.add('pulling-left');
+      } else {
+        scoreRight++;
+        position++; // tali ke kanan
+        feedback.className = 'feedback correct show';
+        feedback.innerHTML = `✅ <b>BENAR!</b> Tali tertarik ke arah TIM KANAN!<br><small>${qData.explain}</small>`;
+        document.getElementById('scoreRight').textContent = scoreRight;
+        teamRight.classList.add('pulling-right');
+      }
+    } else {
+      btn.classList.add('wrong');
+      allOptions[qData.answer].classList.add('correct');
+      if (currentTurn === 'left') {
+        // Tim kiri salah → tali ke kanan (untungkan tim kanan)
+        position++;
+        feedback.className = 'feedback wrong show';
+        feedback.innerHTML = `❌ <b>SALAH!</b> Tali tertarik ke arah TIM KANAN!<br><small>Jawaban benar: <b>${qData.options[qData.answer]}</b><br>${qData.explain}</small>`;
+        teamRight.classList.add('pulling-right');
+      } else {
+        // Tim kanan salah → tali ke kiri (untungkan tim kiri)
+        position--;
+        feedback.className = 'feedback wrong show';
+        feedback.innerHTML = `❌ <b>SALAH!</b> Tali tertarik ke arah TIM KIRI!<br><small>Jawaban benar: <b>${qData.options[qData.answer]}</b><br>${qData.explain}</small>`;
+        teamLeft.classList.add('pulling-left');
+      }
+    }
+
+    updateRope();
+    totalQuestionsAnswered++;
+
+    setTimeout(() => {
+      teamLeft.classList.remove('pulling-left');
+      teamRight.classList.remove('pulling-right');
+
+      // Lanjut ke giliran berikutnya
+      if (currentTurn === 'left') {
+        currentTurn = 'right';
+      } else {
+        currentTurn = 'left';
+        currentRound++;
+      }
+
+      if (totalQuestionsAnswered < 10) {
+        loadQuestion();
+      } else {
+        showResult();
+      }
+    }, 2800);
+  }
+
+  function updateRope() {
+    // position: -10 sampai +10
+    // knot left: 50% + position*4%
+    const percent = 50 + position * 4;
+    knot.style.left = percent + '%';
+
+    // Tim bergerak mengikuti tali
+    const leftOffset = 5 + Math.max(0, -position) * 2;
+    const rightOffset = 5 + Math.max(0, position) * 2;
+    teamLeft.style.left = leftOffset + '%';
+    teamRight.style.right = rightOffset + '%';
+  }
+
+  function showResult() {
+    document.getElementById('gameArea').style.display = 'none';
+    teamLeft.classList.remove('active');
+    teamRight.classList.remove('active');
+    const resultScreen = document.getElementById('resultScreen');
+    resultScreen.classList.add('show');
+
+    const icon = document.getElementById('resultIcon');
+    const title = document.getElementById('resultTitle');
+    const msg = document.getElementById('resultMsg');
+
+    if (scoreLeft > scoreRight) {
+      icon.textContent = '🏆';
+      title.textContent = 'TIM KIRI MENANG! 🎉';
+      title.style.color = '#4ade80';
+      msg.innerHTML = `Selamat! Skor akhir: <b>Tim Kiri ${scoreLeft} - ${scoreRight} Tim Kanan</b><br>
+                       Tali berhasil ditarik ke arah Tim Kiri!<br>
+                       Penguasaan Descriptive Text Tim Kiri sangat baik! 👏`;
+    } else if (scoreRight > scoreLeft) {
+      icon.textContent = '🤖';
+      title.textContent = 'TIM KANAN MENANG!';
+      title.style.color = '#f87171';
+      msg.innerHTML = `Tim Kanan menang dengan skor <b>${scoreRight} - ${scoreLeft}</b>.<br>
+                       Ayo pelajari kembali Descriptive Text dan coba lagi! 📚`;
+    } else {
+      icon.textContent = '🤝';
+      title.textContent = 'PERTANDINGAN SERI!';
+      title.style.color = '#fbbf24';
+      msg.innerHTML = `Skor akhir <b>${scoreLeft} - ${scoreRight}</b>. Kedua tim sama kuat!<br>
+                       Main lagi untuk menentukan pemenang!`;
+    }
+  }
+
+  function restartGame() {
+    currentRound = 0;
+    currentTurn = 'left';
+    scoreLeft = 0;
+    scoreRight = 0;
+    position = 0;
+    totalQuestionsAnswered = 0;
+    document.getElementById('scoreLeft').textContent = '0';
+    document.getElementById('scoreRight').textContent = '0';
+    document.getElementById('gameArea').style.display = 'block';
+    document.getElementById('resultScreen').classList.remove('show');
+    knot.style.left = '50%';
+    teamLeft.style.left = '5%';
+    teamRight.style.right = '5%';
+    loadQuestion();
+  }
+
+  // Mulai game
+  loadQuestion();
+</script>
+</body>
+</html>
